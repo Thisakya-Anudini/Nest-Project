@@ -13,22 +13,20 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  private async signTokens(user: UserDocument) {
-    const payload = {
-      email: user.email,
-      sub: user._id.toString(),
-      role: user.role,
+  async register(email: string, password: string, role: string = 'user') {
+    const user = await this.usersService.createUser(email, password, role);
+    const tokens = await this.signTokens(user);
+    await this.usersService.storeRefreshToken(user._id, tokens.refreshToken);
+
+    return {
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
     };
-
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '15m',
-    });
-
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '7d',
-    });
-
-    return { accessToken, refreshToken };
   }
 
   async login(email: string, password: string) {
@@ -41,6 +39,26 @@ export class AuthService {
       access_token: tokens.accessToken,
       refresh_token: tokens.refreshToken,
     };
+  }
+
+  private async signTokens(user: UserDocument) {
+    const payload = {
+      email: user.email,
+      sub: user._id.toString(),
+      role: user.role,
+    };
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_SECRET || 'secretKey',
+      expiresIn: '15m',
+    });
+
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      secret: process.env.REFRESH_TOKEN_SECRET || 'secretKey',
+      expiresIn: '7d',
+    });
+
+    return { accessToken, refreshToken };
   }
 
   async refresh(refreshToken: string) {
