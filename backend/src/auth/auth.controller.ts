@@ -12,4 +12,14 @@ export class AuthController {
   ) {
     return this.authService.login(email, password);
   }
+
+  @Post('refresh')
+  async refresh(@Body('refresh_token') refreshToken: string) {
+    return this.authService.refresh(refreshToken);
+  }
+
+  @Post('logout')
+  async logout(@Body('userId') userId: string) {
+    return this.authService.logout(userId);
+  }
 }

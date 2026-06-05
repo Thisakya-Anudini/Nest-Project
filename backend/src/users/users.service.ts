@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from './user.schema';
 
@@ -36,5 +36,26 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async findById(id: string): Promise<UserDocument | null> {
+    return this.userModel.findById(id);
+  }
+
+  async storeRefreshToken(
+    id: Types.ObjectId | string,
+    refreshToken: string,
+  ): Promise<void> {
+    await this.userModel.findByIdAndUpdate(id, { refreshToken });
+  }
+
+  async getUserByRefreshToken(
+    refreshToken: string,
+  ): Promise<UserDocument | null> {
+    return this.userModel.findOne({ refreshToken });
+  }
+
+  async removeRefreshToken(id: Types.ObjectId | string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(id, { $unset: { refreshToken: 1 } });
   }
 }
